@@ -1,5 +1,13 @@
+'''
+Sources:
+https://www.geeksforgeeks.org/python/python-program-to-print-current-year-month-and-day/
+'''
+
+from datetime import date
+
 contact = {
-	"firstName" : "Example",
+	"nickname" : "Ex",
+    "firstName" : "Example",
 	"lastName" : "Example",
 	"phoneNumber" : "555-555-5555",
 	"email" : "example@example.ex",
@@ -11,7 +19,7 @@ contact = {
 		"street" : "1234 Example St.",
 		"city" : "Fort Wayne",
 		"state" : "Ohio",
-		"zip" : 44444
+		"zip" : "44444"
 	}
 }
 
@@ -24,15 +32,19 @@ contacts = {}
 lettersUpper = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
 lettersLower = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 numbers = ['0','1','2','3','4','5','6','7','8','9']
+symbols = [' ', '`', '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"', ',', '.', '<', '>', '/', '?']
+letters = lettersUpper + lettersLower
+numbersAndLetters = letters + numbers
+allText = numbersAndLetters + symbols
 
 #returns true if only valid chars are found
-def charWhitelist(txt, exceptions=[]):
-	for ch in txt:
-		if not (ch in lettersLower or ch in lettersUpper or ch in numbers or ch in exceptions):
-			return False
-	return True
+def charWhitelist(txt, list, exceptions=[]):
+    for ch in txt:
+        if not (ch in list or ch in exceptions):
+            return False
+    return True
 
-#does not accept negative numbers
+#does not accept negative or decimal numbers
 def isIntegral(txt):
 	for ch in txt:
 		if not ch in numbers:
@@ -54,7 +66,7 @@ def isPhoneNumber(txt):
 	return False
 
 #normally emails are allowed to have certain symbols in certain circumstances, but this implementation only allows very basic emails.
-#For example, "bdd(.-01_"@google.com is technically a valid email, but this program does not accept it.
+#for example, "bdd(.-01_"@google.com is technically a valid email, but this program does not accept it.
 def isEmail(txt):
 	if txt.count('@') != 1 or txt.count('.') < 1:
 		return False
@@ -79,7 +91,7 @@ def isEmail(txt):
 		else:
 			previousIsDot = False
 	#final filter for invalid characters
-	return charWhitelist(txt, ['@', '.'])
+	return charWhitelist(txt, numbersAndLetters, ['@', '.'])
 
 #follows the format MM/DD/YYYY
 def isDate(txt):
@@ -109,7 +121,7 @@ def isStreet(txt):
 	street = txt[spaceLocation+1:]
 	validStreetChars = [' ', '.', '\'']
 	if not charWhitelist(street, validStreetChars):
-		return false
+		return False
 	#whether or not the previous char was their validStreetChars equivilant
 	previousStreetChars = [False, False, False]
 	for index in range(len(txt)):
@@ -136,8 +148,83 @@ def isStreet(txt):
 def contactInBounds(id):
 	return len(contacts) > id
 
-def contactCreate():
-	input()
+def contactValidate(contactInfo):
+    validKeys = ["nickname", "firstName", "lastName", "phoneNumber", "email", "tags", "notes", "address", "dateMade", "dateModified"]
+    validAddressKeys = ["street", "city", "state", "zip"]
+    #get keys, detect required keys, detect date keys
+    keys = contactInfo.keys()
+    if not ("firstName" in keys and "lastName" in keys and "phoneNumber" in keys):
+        print("Error: Contact must contain first name, last name, and phone number.")
+        return False
+    hasAddress = "address" in keys
+    addressKeys = []
+    if hasAddress:
+        addressKeys = contactInfo["address"].keys()
+    #detect invalid keys
+    invalidKeys = []
+    for key in keys:
+        if not key in validKeys:
+            invalidKeys.append(key)
+    if hasAddress:
+        for key in addressKeys:
+            if not key in validAddressKeys:
+                invalidKeys.append("address["+key+"]")
+    if len(invalidKeys) >= 1:
+        print("Error: Contact contains one or more invalid attributes:")
+        print(invalidKeys)
+        return False
+    #validate keys
+    for key in ["nickname", "firstName", "lastName"]:
+        if key in keys:
+            if not charWhitelist(contactInfo[key], letters):
+                print("Error: Invalid name or nickname ("+contactInfo[key]+").")
+                return False
+    if "tags" in keys:
+        for tag in contactInfo["tags"]:
+            if not charWhitelist(tag, allText):
+                print("Error: Invalid tag ("+tag+").")
+                return False
+    if "notes" in keys:
+        if not charWhitelist(contactInfo["notes"], allText):
+            print("Error: Invalid notes.")
+            return False
+    for key in ["dateMade", "dateModified"]:
+        if key in keys:
+            if not isDate(contactInfo[key]):
+                print("Error: Invalid date ("+contactInfo[key]+").")
+                return False
+    if "zip" in addressKeys:
+        if not isIntegral(contactInfo["address"]["zip"]):
+            print("Error: Invalid zip code.")
+            return False
+    if "state" in addressKeys:
+        if not charWhitelist(contactInfo["address"]["state"], letters):
+            print("Error: Invalid state.")
+            return False
+    if "city" in addressKeys:
+        if not charWhitelist(contactInfo["address"]["city"], letters, ["."]):
+            print("Error: Invalid city.")
+            return False
+    if "street" in addressKeys:
+        if not isStreet(contactInfo["address"]["street"]):
+            print("Error: Invalid street.")
+            return False
+    if "email" in keys:
+        if not isEmail(contactInfo["email"]):
+            print("Error: Invalid email.")
+            return False
+    if "phoneNumber" in keys:
+        if not isPhoneNumber(contactInfo["phoneNumber"]):
+            print("Error: Invalid phone number.")
+            return False
+    return True
+
+def contactTimestamp(contactInfo):
+    today = date.today() #can envoke .year .month .day for integers
+    input()
+
+def contactCreate(contactDb, contactInfo):
+    input()
 
 def contactShow():
 	input()
