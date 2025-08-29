@@ -1,13 +1,23 @@
 '''
 Sources:
 https://www.geeksforgeeks.org/python/python-program-to-print-current-year-month-and-day/
+https://www.freecodecamp.org/news/python-switch-statement-switch-case-example/
 '''
 
+import os
 from datetime import date
+
+'''
+TODO:
+contactCreate() and contactCreatePrompt() doesn't support tags yet.
+'''
+
+'''
+CONTACT FORMAT:
 
 contact = {
 	"nickname" : "Ex",
-    "firstName" : "Example",
+	"firstName" : "Example",
 	"lastName" : "Example",
 	"phoneNumber" : "555-555-5555",
 	"email" : "example@example.ex",
@@ -22,6 +32,7 @@ contact = {
 		"zip" : "44444"
 	}
 }
+'''
 
 contacts = {}
 
@@ -39,10 +50,10 @@ allText = numbersAndLetters + symbols
 
 #returns true if only valid chars are found
 def charWhitelist(txt, list, exceptions=[]):
-    for ch in txt:
-        if not (ch in list or ch in exceptions):
-            return False
-    return True
+	for ch in txt:
+		if not (ch in list or ch in exceptions):
+			return False
+	return True
 
 #does not accept negative or decimal numbers
 def isIntegral(txt):
@@ -142,89 +153,159 @@ def isStreet(txt):
 	return True
 
 #========================================================================================================================
-#===== CONTACT FUNCTIONS ================================================================================================
+#===== CONTACT MODIFICATION FUNCTIONS ===================================================================================
 #========================================================================================================================
 
-def contactInBounds(id):
-	return len(contacts) > id
-
 def contactValidate(contactInfo):
-    validKeys = ["nickname", "firstName", "lastName", "phoneNumber", "email", "tags", "notes", "address", "dateMade", "dateModified"]
-    validAddressKeys = ["street", "city", "state", "zip"]
-    #get keys, detect required keys, detect date keys
-    keys = contactInfo.keys()
-    if not ("firstName" in keys and "lastName" in keys and "phoneNumber" in keys):
-        print("Error: Contact must contain first name, last name, and phone number.")
-        return False
-    hasAddress = "address" in keys
-    addressKeys = []
-    if hasAddress:
-        addressKeys = contactInfo["address"].keys()
-    #detect invalid keys
-    invalidKeys = []
-    for key in keys:
-        if not key in validKeys:
-            invalidKeys.append(key)
-    if hasAddress:
-        for key in addressKeys:
-            if not key in validAddressKeys:
-                invalidKeys.append("address["+key+"]")
-    if len(invalidKeys) >= 1:
-        print("Error: Contact contains one or more invalid attributes:")
-        print(invalidKeys)
-        return False
-    #validate keys
-    for key in ["nickname", "firstName", "lastName"]:
-        if key in keys:
-            if not charWhitelist(contactInfo[key], letters):
-                print("Error: Invalid name or nickname ("+contactInfo[key]+").")
-                return False
-    if "tags" in keys:
-        for tag in contactInfo["tags"]:
-            if not charWhitelist(tag, allText):
-                print("Error: Invalid tag ("+tag+").")
-                return False
-    if "notes" in keys:
-        if not charWhitelist(contactInfo["notes"], allText):
-            print("Error: Invalid notes.")
-            return False
-    for key in ["dateMade", "dateModified"]:
-        if key in keys:
-            if not isDate(contactInfo[key]):
-                print("Error: Invalid date ("+contactInfo[key]+").")
-                return False
-    if "zip" in addressKeys:
-        if not isIntegral(contactInfo["address"]["zip"]):
-            print("Error: Invalid zip code.")
-            return False
-    if "state" in addressKeys:
-        if not charWhitelist(contactInfo["address"]["state"], letters):
-            print("Error: Invalid state.")
-            return False
-    if "city" in addressKeys:
-        if not charWhitelist(contactInfo["address"]["city"], letters, ["."]):
-            print("Error: Invalid city.")
-            return False
-    if "street" in addressKeys:
-        if not isStreet(contactInfo["address"]["street"]):
-            print("Error: Invalid street.")
-            return False
-    if "email" in keys:
-        if not isEmail(contactInfo["email"]):
-            print("Error: Invalid email.")
-            return False
-    if "phoneNumber" in keys:
-        if not isPhoneNumber(contactInfo["phoneNumber"]):
-            print("Error: Invalid phone number.")
-            return False
-    return True
+	validKeys = ["nickname", "firstName", "lastName", "phoneNumber", "email", "tags", "notes", "address", "dateMade", "dateModified"]
+	validAddressKeys = ["street", "city", "state", "zip"]
+	#get keys, detect required keys, detect date keys
+	keys = contactInfo.keys()
+	if not ("firstName" in keys and "lastName" in keys and "phoneNumber" in keys):
+		print("Error: Contact must contain first name, last name, and phone number.")
+		return False
+	hasAddress = "address" in keys
+	addressKeys = []
+	if hasAddress:
+		addressKeys = contactInfo["address"].keys()
+	#detect invalid keys
+	invalidKeys = []
+	for key in keys:
+		if not key in validKeys:
+			invalidKeys.append(key)
+	if hasAddress:
+		for key in addressKeys:
+			if not key in validAddressKeys:
+				invalidKeys.append("address["+key+"]")
+	if len(invalidKeys) >= 1:
+		print("Error: Contact contains one or more invalid attributes:")
+		print(invalidKeys)
+		return False
+	#validate keys
+	for key in ["nickname", "firstName", "lastName"]:
+		if key in keys:
+			if not charWhitelist(contactInfo[key], letters):
+				print("Error: Invalid name or nickname ("+contactInfo[key]+").")
+				return False
+	if "tags" in keys:
+		for tag in contactInfo["tags"]:
+			if not charWhitelist(tag, allText):
+				print("Error: Invalid tag ("+tag+").")
+				return False
+	if "notes" in keys:
+		if not charWhitelist(contactInfo["notes"], allText):
+			print("Error: Invalid notes.")
+			return False
+	for key in ["dateMade", "dateModified"]:
+		if key in keys:
+			if not isDate(contactInfo[key]):
+				print("Error: Invalid date ("+contactInfo[key]+").")
+				return False
+	if "zip" in addressKeys:
+		if not isIntegral(contactInfo["address"]["zip"]):
+			print("Error: Invalid zip code.")
+			return False
+	if "state" in addressKeys:
+		if not charWhitelist(contactInfo["address"]["state"], letters):
+			print("Error: Invalid state.")
+			return False
+	if "city" in addressKeys:
+		if not charWhitelist(contactInfo["address"]["city"], letters, ["."]):
+			print("Error: Invalid city.")
+			return False
+	if "street" in addressKeys:
+		if not isStreet(contactInfo["address"]["street"]):
+			print("Error: Invalid street.")
+			return False
+	if "email" in keys:
+		if not isEmail(contactInfo["email"]):
+			print("Error: Invalid email.")
+			return False
+	if "phoneNumber" in keys:
+		if not isPhoneNumber(contactInfo["phoneNumber"]):
+			print("Error: Invalid phone number.")
+			return False
+	return True
 
-def contactTimestamp(contactInfo):
-    today = date.today() #can envoke .year .month .day for integers
-    input()
+def contactTimestamp(contactInfo, stampMade, stampModified):
+	today = date.today()
+	year = str(today.year).rjust(4, '0')
+	month = str(today.month).rjust(2, '0')
+	day = str(today.day).rjust(2, '0')
+	dateStr = month + "-" + day + "-" + year
+	keys = contactInfo.keys()
+	
+	if stampMade:
+		contactInfo.update({"dateMade": dateStr})
+	if stampModified:
+		contactInfo.update({"dateModified": dateStr})
 
 def contactCreate(contactDb, contactInfo):
-    input()
+	if contactValidate(contactInfo):
+		contactTimestamp(contactInfo, True, True)
+		contactDb.update({contactInfo["nickname"]: contactInfo})
+		return contactInfo["nickname"]
+	return None
+
+def contactChange(contactDb, contactId, contactChanges):
+	input()
+
+def contactMerge(contactDb, contactId1, contactId2):
+	input()
+
+def contactDelete(contactDb, contactId):
+	input()
+
+#========================================================================================================================
+#===== CONTACT PROMPT FUNCTIONS =========================================================================================
+#========================================================================================================================
+
+def contactCreatePrompt(contactDb):
+	listKeys = contactDb.keys()
+	print("For the following prompts, leave the field blank if not applicable. Prompts with \"*\" are required, and cannot be left blank.\n")
+	nickname = input("*Input contact nickname: ")
+	
+	if nickname == "":
+		print("Error: You must provide a nickname.")
+		return None
+	if nickname in listKeys:
+		print("Error: Contact nicknames must be unique.")
+		return None
+	contact = {"nickname":nickname}
+	
+	fields = ["firstName", "lastName", "phoneNumber", "email", "notes"]
+	fieldNames = ["first name", "last name", "phone number", "email", "notes"]
+	fieldRequired = [True, True, True, False, False]
+
+	for field in range(len(fields)):
+		printText = "Input contact " + fieldNames[field] + ": "
+		if fieldRequired[field]:
+			printText = "*" + printText
+		answer = input(printText)
+		if answer == "" and fieldRequired[field]:
+			print("Error: You must provide a " + fieldNames[field] + ".")
+			return None
+		if answer != "":
+			contact.update({fields[field]: answer})
+   
+	addressFields = ["street", "city", "state", "zip"]
+	addressFieldNames = ["street", "city", "state", "zip code"]
+	hasAddressKey = False
+	
+	for field in range(len(addressFields)):
+		printText = "Input contact " + addressFieldNames[field] + ": "
+		answer = input(printText)
+		if answer != "":
+			if not hasAddressKey:
+				contact.update({"address": {addressFields[field]:answer}})
+				hasAddressKey = True
+			else:
+				contact["address"].update({addressFields[field]: answer})
+	return contactCreate(contactDb, contact)
+
+#========================================================================================================================
+#===== CONTACT READING FUNCTIONS ========================================================================================
+#========================================================================================================================
 
 def contactShow():
 	input()
@@ -233,15 +314,6 @@ def contactShowAll():
 	input()
 
 def contactShowStats():
-	input()
-
-def contactChange():
-	input()
-
-def contactMerge():
-	input()
-
-def contactDelete():
 	input()
 
 def contactSearchName():
@@ -259,3 +331,59 @@ def contactSearchDuplicate():
 #will use contactSearchTag()'s output
 def contactExport():
 	input()
+
+#========================================================================================================================
+#===== PROGRAM FUNCTIONS ================================================================================================
+#========================================================================================================================
+
+def clearScreen():
+    os.system("cls")
+
+def mainMenu():
+	answer = ""
+	exitProgram = False
+	
+	while not exitProgram:
+		clearScreen()
+		print("Contact Manager")
+		print("Type the number next to the action you want to perform.")
+		print("1 - Add contact")
+		print("2 - Change contact")
+		print("3 - Delete contact")
+		print("4 - Show contact statistics")
+		print("5 - Find duplicate contacts")
+		print("6 - Show contact")
+		print("7 - Show all contacts")
+		print("8 - Search contacts")
+		print("9 - Export contacts")
+		print("0 - Exit")
+		answer = input()
+		clearScreen()
+		
+		match answer:
+			case "0":
+				exitProgram = True
+			case "1":
+				contactId = contactCreatePrompt(contacts)
+				if contactId == None:
+					input("Contact creation failed.")
+				else:
+					input("Contact created successfuly.")
+			case "2":
+				input()
+			case "3":
+				input()
+			case "4":
+				input()
+			case "5":
+				input()
+			case "6":
+				input()
+			case "7":
+				input()
+			case "8":
+				input()
+			case "9":
+				input()
+
+mainMenu()
