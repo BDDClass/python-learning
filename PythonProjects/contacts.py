@@ -43,7 +43,8 @@ contacts = {}
 lettersUpper = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
 lettersLower = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 numbers = ['0','1','2','3','4','5','6','7','8','9']
-symbols = [' ', '`', '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '[', ']', '{', '}', '\\', '|', ';', ':', '\'', '"', ',', '.', '<', '>', '/', '?']
+# ", [], and {} are not allowed since it would mess up importing contacts like SQL injections
+symbols = [' ', '`', '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '=', '+', '\\', '|', ';', ':', '\'', ',', '.', '<', '>', '/', '?']
 letters = lettersUpper + lettersLower
 numbersAndLetters = letters + numbers
 allText = numbersAndLetters + symbols
@@ -431,28 +432,157 @@ def contactShowStats(contactDb):
 	input()
 
 def contactSearchName(contactDb, contactName):
-	filteredContacts = [] #list of contactIds
-	input()
+	filteredContacts = {}
+	searchName = contactName.lower()
+	for value in contactDb.values():
+		foundFirstName = value["firstName"].lower().find(searchName) > -1
+		foundLastName = value["lastName"].lower().find(searchName) > -1
+		if foundFirstName or foundLastName:
+			filteredContacts.update({value["nickname"]: value})
+	return filteredContacts
 
 def contactSearchPhone(contactDb, contactPhone):
-	filteredContacts = [] #list of contactIds
-	input()
+	for value in contactDb.values():
+		if value["phoneNumber"] == contactPhone:
+			return (value["nickname"], value)
+	return (None, None)
 
 def contactSearchTag(contactDb, contactTag):
-	filteredContacts = [] #list of contactIds
-	input()
+	filteredContacts = {}
+	for value in contactDb.values():
+		if contactTag in value["tags"]:
+			filteredContacts.update({value["nickname"]: value})
+	return filteredContacts
 
-def contactSearchDuplicate(contactDb):
-	#attributes that will trigger duplication search:
-	#nickname, firstName + lastName, phoneNumber, email
-	input()
+def contactSearchDuplicates(contactDb):
+	matchesNickname = []
+	matchesName = []
+	matchesPhone = []
+	matchesEmail = []
+	
+	uniqueNicknames = []
+	uniqueNames = []
+	uniquePhones = []
+	uniqueEmails = []
+	for value in contactDb.values():
+		if not value["nickname"] in uniqueNicknames:
+			uniqueNicknames.append(value["nickname"])
+		if not (value["firstName"] + value["lastName"]) in uniqueNames:
+			uniqueNames.append(value["firstName"] + value["lastName"])
+		if not value["phoneNumber"] in uniquePhones:
+			uniquePhones.append(value["phoneNumber"])
+		if not value["email"] in uniqueEmails:
+			uniqueEmails.append(value["email"])
+	
+	dbSize = len(contactDb.keys())
+	
+	#find duplicate nicknames
+	if len(uniqueNicknames) != dbSize:
+		for nickname in uniqueNicknames:
+			idMatches = []
+			for value in contactDb.values():
+				if value["nickname"] == nickname:
+					idMatches.append(value["nickname"])
+			if len(idMatches) > 1:
+				matchesNickname.append(idMatches)
+	#find duplicate names
+	if len(uniqueNames) != dbSize:
+		for name in uniqueNames:
+			idMatches = []
+			for value in contactDb.values():
+				if (value["firstName"] + value["lastName"]) == name:
+					idMatches.append(value["nickname"])
+			if len(idMatches) > 1:
+				matchesName.append(idMatches)
+	#find duplicate phone numbers
+	if len(uniquePhones) != dbSize:
+		for phone in uniquePhones:
+			idMatches = []
+			for value in contactDb.values():
+				if value["phoneNumber"] == phone:
+					idMatches.append(value["nickname"])
+			if len(idMatches) > 1:
+				matchesPhone.append(idMatches)
+	#find duplicate emails
+	if len(uniqueEmails) != dbSize:
+		for email in uniqueEmails:
+			idMatches = []
+			for value in contactDb.values():
+				if value["email"] == email:
+					idMatches.append(value["nickname"])
+			if len(idMatches) > 1:
+				matchesEmail.append(idMatches)
+	
+	duplicateContacts = {}
+	duplicateContacts.update({"duplicateNicknames": matchesNickname})
+	duplicateContacts.update({"duplicateNames": matchesName})
+	duplicateContacts.update({"duplicatePhones": matchesPhone})
+	duplicateContacts.update({"duplicateEmails": matchesEmail})
+	return duplicateContacts
 
-def contactStringForm(contactDb, contactId):
-	input()
+def contactStringForm(contactInfo):
+	keys = contactInfo.keys()
+	stream = ""
+	stream += "{ [\"nickname\"]: " + contactInfo["nickname"] + " "
+	stream += ", [\"firstName\"]: " + contactInfo["firstName"] + " "
+	stream += ", [\"lastName\"]: " + contactInfo["lastName"] + " "
+	stream += ", [\"phoneNumber\"]: " + contactInfo["phoneNumber"] + " "
+	if "email" in keys:
+		stream += ", [\"email\"]: " + contactInfo["email"] + " "
+	if "dateMade" in keys:
+		stream += ", [\"dateMade\"]: " + contactInfo["dateMade"] + " "
+	if "dateModified" in keys:
+		stream += ", [\"dateModified\"]: " + contactInfo["dateModified"] + " "
+	if "notes" in keys:
+		stream += ", [\"notes\"]: " + contactInfo["notes"] + " "
+	if "tags" in keys:
+		stream += ", [\"tags\"]: ["
+		for tag in range(len(contactInfo["tags"])):
+			stream += "\"" + contactInfo["tags"][tag] + "\""
+			if tag != len(contactInfo["tags"]) - 1:
+				stream += ", "
+		stream += "] "
+	if "address" in keys:
+		address = contactInfo["address"]
+		addressKeys = address.keys()
+		stream += ", [\"address\"]: { "
+		firstAttribute = True
+		if "street" in addressKeys:
+			if not firstAttribute:
+				stream += ", "
+			stream += "[\"street\"]: " + address["street"]
+			firstAttribute = False
+		if "city" in addressKeys:
+			if not firstAttribute:
+				stream += ", "
+			stream += "[\"city\"]: " + address["city"]
+			firstAttribute = False
+		if "state" in addressKeys:
+			if not firstAttribute:
+				stream += ", "
+			stream += "[\"state\"]: " + address["state"]
+			firstAttribute = False
+		if "zip" in addressKeys:
+			if not firstAttribute:
+				stream += ", "
+			stream += "[\"zip\"]: " + address["zip"]
+			firstAttribute = False
+		stream += " } "
+	stream += "}"
+	return stream
 
-#will use contactSearchTag()'s output
 def contactExport(contactDb, contactTag):
-	input()
+	entries = contactSearchTag(contactDb, contactTag)
+	stream = "{ "
+	firstAttribute = True
+	for key in entries.keys():
+		if not firstAttribute:
+			stream += ", "
+		contactText = contactStringForm(entries[key])
+		stream += "[\"" + key + "\"]: " + contactText
+	stream += " }"
+	return stream
+	
 
 #========================================================================================================================
 #===== PROGRAM FUNCTIONS ================================================================================================
@@ -513,10 +643,14 @@ def mainMenu():
 				contactShown = contactShow(contacts, contactId)
 				if not contactShown:
 					input("Contact failed to show.")
+				else:
+					input()
 			case "7":
 				contactsShown = contactShowAll(contacts)
 				if not contactsShown:
 					input("Contacts failed to show.")
+				else:
+					input()
 			case "8":
 				input()
 			case "9":
