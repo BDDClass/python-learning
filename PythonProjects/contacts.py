@@ -8,11 +8,6 @@ import os
 from datetime import date
 
 '''
-TODO:
-contactCreate() and contactCreatePrompt() doesn't support tags yet.
-'''
-
-'''
 CONTACT FORMAT:
 
 contact = {
@@ -282,7 +277,94 @@ def contactChange(contactDb, contactId, contactChanges):
 	return newContactValid
 
 def contactMerge(contactDb, contactId1, contactId2):
-	input()
+	if not contactId1 in contactDb or not contactId2 in contactDb:
+		print("Error: Contact not found.")
+		return None
+	contact1 = contactDb[contactId1]
+	contact2 = contactDb[contactId2]
+	uniqueKeys = set(contactDb[contactId1].keys()) | set(contactDb[contactId2].keys())
+
+	c1Date = contact1["dateModified"]
+	c2Date = contact2["dateModified"]
+	c1Year = int(c1Date[-4:])
+	c1Month = int(c1Date[:2])
+	c1Day = int(c1Date[3:5])
+	c2Year = int(c2Date[-4:])
+	c2Month = int(c2Date[:2])
+	c2Day = int(c2Date[3:5])
+
+	newerContact = -1 #this stays -1 if both dates are the same
+	if c1Year > c2Year:
+		newerContact = 0
+	elif c2Year > c1Year:
+		newerContact = 1
+	else:
+		if c1Month > c2Month:
+			newerContact = 0
+		elif c2Month > c1Month:
+			newerContact = 1
+		else:
+			if c1Day > c2Day:
+				newerContact = 0
+			elif c2Day > c1Day:
+				newerContact = 1
+	promptChanges = newerContact == -1
+	if promptChanges:
+		print("Both contacts have the same date.\nFor each field, enter which contact will be merged.\n1 = Contact 1, 2 = Contact 2.")
+
+	contactOrder = [contact1, contact2]
+	if newerContact == 1:
+		contactOrder = [contact2, contact1]
+	#contact order will always have the newer contact first
+	
+	mergedContact = {}
+	newContact = contactOrder[0]
+	oldContact = contactOrder[1]
+	newKeys = newContact.keys()
+	oldKeys = oldContact.keys()
+
+	for key in uniqueKeys:
+		bothHasKey = key in contactDb[contactId1].keys() and key in contactDb[contactId2].keys()
+		if key != "address":
+			if promptChanges and bothHasKey:
+				answer = input(key + ": ") #TODO: VALIDATE THIS
+				answer = contactOrder[int(answer)-1][key]
+				mergedContact.update({key: answer})
+			elif not promptChanges and bothHasKey:
+				mergedContact.update({key: newContact[key]})
+			else:
+				if key in newKeys:
+					mergedContact.update({key: newContact[key]})
+				else:
+					mergedContact.update({key: oldContact[key]})
+		else:
+			if not bothHasKey:
+				if key in newKeys:
+					mergedContact.update({key: newContact[key]})
+				else:
+					mergedContact.update({key: oldContact[key]})
+			else:
+				mergedContact.update({key: dict({})})
+				newAddress = newContact["address"]
+				oldAddress = oldContact["address"]
+				newAddressKeys = newContact.keys()
+				oldAddressKeys = oldContact.keys()
+				uniqueAddressKeys = set(newKeys) | set(oldKeys)
+				for addressKey in uniqueAddressKeys:
+					bothHasAddressKey = addressKey in newKeys and addressKey in oldKeys
+					if promptChanges and bothHasAddressKey:
+						input() #TODO
+					elif not promptChanges and bothHasAddressKey:
+						input() #TODO
+					else:
+						input() #TODO
+
+	mergeValid = contactValidate(mergedContact)
+	if mergeValid:
+		#TIMESTAMP, REPLACE DUPLICATE NICKNAME WITH MERGED CONTACT
+		input() #TODO
+	else:
+		return None
 
 def contactDelete(contactDb, contactId):
 	listKeys = contactDb.keys()
@@ -337,6 +419,11 @@ def contactCreatePrompt(contactDb):
 				hasAddressKey = True
 			else:
 				contact["address"].update({addressFields[field]: answer})
+    
+	answer = input("Insert contact tags, separated by one space instead of commas: ")
+	if answer != "":
+		contact.update({"tags": answer.split(" ")})
+    
 	return contactCreate(contactDb, contact)
 
 def contactChangePrompt(contactDb):
@@ -361,8 +448,13 @@ def contactChangePrompt(contactDb):
 	addressFields = ["street", "city", "state", "zip"]
 	hasAddressKey = False
 	for field in range(len(fieldsChanging)):
-		#these responses are validated in contactValidate(), not here
-		answer = input("Enter the new value for " + fieldsChanging[field] + ": ")
+		tagText = ""
+		if fieldsChanging[field] == "tags":
+			tagText = ". Enter each tag separated by one space, not a comma"
+  		#these responses are validated in contactValidate(), not here
+		answer = input("Enter the new value for " + fieldsChanging[field] + tagText + ": ")
+		if fieldsChanging[field] == "tags":
+			answer = answer.split(" ")
 		if not fieldsChanging[field] in addressFields:
 			changes.update({fieldsChanging[field]: answer})
 		else:
@@ -429,7 +521,80 @@ def contactShowAll(contactDb):
 	return True
 
 def contactShowStats(contactDb):
-	input()
+	stats = {
+		"contactTotal": 0,
+		"contactsByTag": {},
+		"contactsByState": {},
+		"contactTagAverage": 0.0,
+		"commonAreaCode": "",
+		"contactCountNoEmail": 0
+	}
+	
+	keys = contactDb.keys()
+	values = contactDb.values()
+	
+	stats.update({"contactTotal": len(keys)})
+
+	noEmailCount = 0
+	tagCount = 0.0
+	areaCodeCounts = {}
+	for value in values:
+		valueKeys = value.keys()
+		if not "email" in valueKeys:
+			noEmailCount += 1
+		if "tags" in valueKeys:
+			tagCount += len(value["tags"])
+		areaCode = ""
+		if len(value["phoneNumber"]) == 14:
+			areaCode = value["phoneNumber"][2:4]
+		else:
+			areaCode = value["phoneNumber"][:3]
+		if not areaCode in areaCodeCounts.keys():
+			areaCodeCounts.update({areaCode: 1})
+		else:
+			areaCodeCounts[areaCode] += 1
+	stats.update({"contactCountNoEmail": noEmailCount})
+	stats.update({"contactTagAverage": tagCount/len(keys)})
+	#get most common area code
+	commonCodeIndex = ""
+	commonCodeValue = 0
+	for code in areaCodeCounts.keys():
+		if areaCodeCounts[code] > commonCodeValue:
+			commonCodeIndex = code
+	stats.update({"commonAreaCode": commonCodeIndex})
+	#get unique tags and states
+	uniqueTags = []
+	uniqueStates = []
+	for value in values:
+		contactKeys = value.keys()
+		if "tags" in contactKeys:
+			for tag in value["tags"]:
+				if not tag in uniqueTags:
+					uniqueTags.append(tag)
+		if "address" in contactKeys:
+			if "state" in value["address"].keys():
+				state = value["address"]["state"]
+				if not state in uniqueStates:
+					uniqueStates.append(state)
+	#sort contacts by tag
+	for tag in uniqueTags:
+		matches = []
+		for value in values:
+			contactKeys = value.keys()
+			if "tags" in contactKeys:
+				if tag in value["tags"]:
+					matches.append(value["nickname"])
+		stats["contactsByTag"].update({tag: matches})
+	#sort contacts by state
+	for state in uniqueStates:
+		matches = []
+		for value in values:
+			if "address" in value.keys():
+				if "state" in value["address"].keys():
+					if state == value["address"]["state"]:
+						matches.append(value["nickname"])
+		stats["contactsByState"].update({state: matches})
+	return stats
 
 def contactSearchName(contactDb, contactName):
 	filteredContacts = {}
@@ -582,7 +747,6 @@ def contactExport(contactDb, contactTag):
 		stream += "[\"" + key + "\"]: " + contactText
 	stream += " }"
 	return stream
-	
 
 #========================================================================================================================
 #===== PROGRAM FUNCTIONS ================================================================================================
