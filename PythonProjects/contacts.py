@@ -2,9 +2,17 @@
 Sources:
 https://www.geeksforgeeks.org/python/python-program-to-print-current-year-month-and-day/
 https://www.freecodecamp.org/news/python-switch-statement-switch-case-example/
+https://stackoverflow.com/questions/306400/how-can-i-randomly-select-choose-an-item-from-a-list-get-a-random-element
+https://stackoverflow.com/questions/2793324/is-there-a-simple-way-to-delete-a-list-element-by-value
+'''
+
+'''
+TODO:
+Tag search, contact export, and find duplicate contacts give uncaught error
 '''
 
 import os
+import random
 from datetime import date
 
 '''
@@ -180,7 +188,7 @@ def contactValidate(contactInfo):
 	#validate keys
 	for key in ["nickname", "firstName", "lastName"]:
 		if key in keys:
-			if not charWhitelist(contactInfo[key], letters):
+			if not charWhitelist(contactInfo[key], letters, [" "]):
 				print("Error: Invalid name or nickname ("+contactInfo[key]+").")
 				return False
 	if "tags" in keys:
@@ -202,11 +210,11 @@ def contactValidate(contactInfo):
 			print("Error: Invalid zip code.")
 			return False
 	if "state" in addressKeys:
-		if not charWhitelist(contactInfo["address"]["state"], letters):
+		if not charWhitelist(contactInfo["address"]["state"], letters, [" "]):
 			print("Error: Invalid state.")
 			return False
 	if "city" in addressKeys:
-		if not charWhitelist(contactInfo["address"]["city"], letters, ["."]):
+		if not charWhitelist(contactInfo["address"]["city"], letters, [" ", "."]):
 			print("Error: Invalid city.")
 			return False
 	if "street" in addressKeys:
@@ -276,6 +284,14 @@ def contactChange(contactDb, contactId, contactChanges):
 		contactDb.update({nickname: oldContact})
 	return newContactValid
 
+def contactDelete(contactDb, contactId):
+	listKeys = contactDb.keys()
+	if not contactId in listKeys:
+		print("Error: Contact does not exist.")
+		return False
+	contactDb.pop(contactId)
+	return True
+
 def contactMerge(contactDb, contactId1, contactId2):
 	if not contactId1 in contactDb or not contactId2 in contactDb:
 		print("Error: Contact not found.")
@@ -309,13 +325,11 @@ def contactMerge(contactDb, contactId1, contactId2):
 			elif c2Day > c1Day:
 				newerContact = 1
 	promptChanges = newerContact == -1
-	if promptChanges:
-		print("Both contacts have the same date.\nFor each field, enter which contact will be merged.\n1 = Contact 1, 2 = Contact 2.")
 
 	contactOrder = [contact1, contact2]
 	if newerContact == 1:
 		contactOrder = [contact2, contact1]
-	#contact order will always have the newer contact first
+	#contactOrder will always have the newer contact first
 	
 	mergedContact = {}
 	newContact = contactOrder[0]
@@ -323,11 +337,18 @@ def contactMerge(contactDb, contactId1, contactId2):
 	newKeys = newContact.keys()
 	oldKeys = oldContact.keys()
 
+	if promptChanges:
+		print("Both contacts have the same date.\nFor each field, enter which contact the new contact will inherit.")
+		print("1 = " + newContact["nickname"] + ", 2 = " + oldContact["nickname"] + ".")
+
 	for key in uniqueKeys:
 		bothHasKey = key in contactDb[contactId1].keys() and key in contactDb[contactId2].keys()
 		if key != "address":
 			if promptChanges and bothHasKey:
-				answer = input(key + ": ") #TODO: VALIDATE THIS
+				answer = input(key + ": ")
+				if not answer in ["1", "2"]:
+					print("Error: Invalid answer.")
+					return None
 				answer = contactOrder[int(answer)-1][key]
 				mergedContact.update({key: answer})
 			elif not promptChanges and bothHasKey:
@@ -353,26 +374,29 @@ def contactMerge(contactDb, contactId1, contactId2):
 				for addressKey in uniqueAddressKeys:
 					bothHasAddressKey = addressKey in newKeys and addressKey in oldKeys
 					if promptChanges and bothHasAddressKey:
-						input() #TODO
+						answer = input(addressKey + ": ")
+						if not answer in ["1", "2"]:
+							print("Error: Invalid answer.")
+							return None
+						answer = contactOrder[int(answer)-1]["address"][addressKey]
+						mergedContact["address"].update({addressKey: answer})
 					elif not promptChanges and bothHasAddressKey:
-						input() #TODO
+						mergedContact["address"].update({addressKey: newAddress[addressKey]})
 					else:
-						input() #TODO
+						if addressKey in newAddressKeys:
+							mergedContact["address"].update({addressKey: newAddress[addressKey]})
+						else:
+							mergedContact["address"].update({addressKey: oldAddress[addressKey]})
 
 	mergeValid = contactValidate(mergedContact)
 	if mergeValid:
-		#TIMESTAMP, REPLACE DUPLICATE NICKNAME WITH MERGED CONTACT
-		input() #TODO
+		contactTimestamp(mergedContact, False, True)
+		contactDelete(contactDb, contactId1)
+		contactDelete(contactDb, contactId2)
+		contactDb.update({mergedContact["nickname"]: mergedContact})
+		return mergedContact["nickname"]
 	else:
 		return None
-
-def contactDelete(contactDb, contactId):
-	listKeys = contactDb.keys()
-	if not contactId in listKeys:
-		print("Error: Contact does not exist.")
-		return False
-	contactDb.pop(contactId)
-	return True
 
 #========================================================================================================================
 #===== CONTACT PROMPT FUNCTIONS =========================================================================================
@@ -477,7 +501,7 @@ def contactShow(contactDb, contactId):
 		return False
 	contact = contactDb[contactId]
 	contactKeys = contact.keys()
-	print("="*25)
+	print("="*50)
 	print(contactId + " (" + contact["firstName"] + " " + contact["lastName"] + ")")
 	emailText = ""
 	if "email" in contactKeys:
@@ -495,9 +519,9 @@ def contactShow(contactDb, contactId):
 			streetText = "Street: " + contact["address"]["street"] + " "
 		if "city" in addressKeys:
 			streetText = "City: " + contact["address"]["city"] + " "
-		if "street" in addressKeys:
+		if "state" in addressKeys:
 			streetText = "State: " + contact["address"]["state"] + " "
-		if "street" in addressKeys:
+		if "zip" in addressKeys:
 			streetText = "Zip: " + contact["address"]["zip"] + " "
 	if not (streetText == "" and cityText == "" and stateText == "" and zipText == ""):
 		print(streetText + cityText + stateText + zipText)
@@ -510,7 +534,7 @@ def contactShow(contactDb, contactId):
 			tagText += tag + " "
 		print(tagText)
 
-	print("="*25)
+	print("="*50)
 	return True
 
 def contactShowAll(contactDb):
@@ -752,6 +776,64 @@ def contactExport(contactDb, contactTag):
 #===== PROGRAM FUNCTIONS ================================================================================================
 #========================================================================================================================
 
+def addSampleContacts(amount):
+	sampleNicknames = ["Ben", "Tony", "Ron", "Don", "Tom", "Ella", "Bella", "Mom", "Dad", "Dominos", "Kim", "Karl"]
+	sampleFirstNames = ["Benjamin", "Isabelle", "Donald", "Melinda", "Karen", "Justin", "Jacob", "Fiona"]
+	sampleLastNames = ["Deuel", "Stafford", "Dison", "Walt", "White", "Robertson", "Topala"]
+	samplePhones = ["269-234-7438", "249-625-1482", "403-356-1746", "385-635-7834"]
+	sampleEmails = ["viewer@gmail.com", "what.ever@yahoo.com", "burnmail@gmail.com", "spammail@yahoo.com", "wawa01@indianatech.edu"]
+	sampleTags = ["Professor", "Family", "Male", "Female"]
+	sampleStreets = ["1234 W St.", "475 Main St.", "256 Washington Blvd."]
+	sampleCities = ["Portage", "Fort Wayne", "Austin", "New York City", "Kalamazoo", "Detroit", "Las Vegas"]
+	sampleStates = ["Michigain", "Indiana", "Ohio", "California", "Washington", "Florda", "Texas"]
+	sampleZips = ["65247", "08532", "14593", "82934", "65478"]
+	
+	for i in range(min([amount, len(sampleNicknames)])):
+		newContact = dict({})
+		nickname = random.choice(sampleNicknames)
+		newContact.update({"nickname": nickname})
+		sampleNicknames.remove(nickname)
+		newContact.update({"firstName": random.choice(sampleFirstNames)})
+		newContact.update({"lastName": random.choice(sampleLastNames)})
+		newContact.update({"phoneNumber": random.choice(samplePhones)})
+		
+		if random.randint(0, 1) == 0:
+			newContact.update({"email": random.choice(sampleEmails)})
+		tagCount = random.randint(0, len(sampleTags)-1)
+		if tagCount > 0:
+			tagChoices = sampleTags.copy()
+			tags = []
+			for j in range(tagCount):
+				tagChoice = random.choice(tagChoices)
+				tags.append(tagChoice)
+				tagChoices.remove(tagChoice)
+			newContact.update({"tags": tags})
+		
+		addressPresent = False
+		if random.randint(0, 1) == 0:
+			if not addressPresent:
+				newContact.update({"address": dict({})})
+			newContact["address"].update({"street": random.choice(sampleStreets)})
+			addressPresent = True
+		if random.randint(0, 1) == 0:
+			if not addressPresent:
+				newContact.update({"address": dict({})})
+			newContact["address"].update({"city": random.choice(sampleCities)})
+			addressPresent = True
+		if random.randint(0, 1) == 0:
+			if not addressPresent:
+				newContact.update({"address": dict({})})
+			newContact["address"].update({"state": random.choice(sampleStates)})
+			addressPresent = True
+		if random.randint(0, 1) == 0:
+			if not addressPresent:
+				newContact.update({"address": dict({})})
+			newContact["address"].update({"zip": random.choice(sampleZips)})
+			addressPresent = True
+		creationSuccess = contactCreate(contacts, newContact)
+		if not creationSuccess:
+			input()
+
 def clearScreen():
     os.system("cls")
 
@@ -799,25 +881,47 @@ def mainMenu():
 				else:
 					input("Contact deleted successfuly.")
 			case "4":
+				print(contactShowStats(contacts))
 				input()
 			case "5":
+				print(contactSearchDuplicates(contacts))
 				input()
 			case "6":
 				contactId = input("Enter the nickname of the contact you would like to see: ")
 				contactShown = contactShow(contacts, contactId)
 				if not contactShown:
-					input("Contact failed to show.")
-				else:
-					input()
+					print("Contact failed to show.")
+				input()
 			case "7":
 				contactsShown = contactShowAll(contacts)
 				if not contactsShown:
-					input("Contacts failed to show.")
-				else:
-					input()
-			case "8":
+					print("Contacts failed to show.")
 				input()
+			case "8":
+				searchAnswer = input("Are you searching by \"name\", \"phone\", or \"tags\"? ")
+				if searchAnswer in ["name", "phone", "tags"]:
+					valueAnswer = input("Enter the value you want to search: ")
+					if searchAnswer == "name":
+						print(contactSearchName(contacts, valueAnswer))
+					elif searchAnswer == "phone":
+						result = contactSearchPhone(contacts, valueAnswer)
+						if result == (None, None):
+							print("No results found.")
+						else:
+							print(result)
+					else:
+						print(contactSearchTag(contacts, valueAnswer))
+					input("Contact search successful.")
+				else:
+					print("Error: Invalid response.")
+					input("Contact search failed.")
 			case "9":
+				tag = input("Enter the tag you would like to export by: ")
+				print(contactExport(contacts, tag))
 				input()
 
-mainMenu()
+try:
+	addSampleContacts(10)
+	mainMenu()
+except Exception as e:
+	input(e)
