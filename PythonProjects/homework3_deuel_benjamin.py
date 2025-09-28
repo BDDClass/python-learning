@@ -12,43 +12,37 @@ def format_receipt(items, prices, quantities):
 	return text
 
 def process_user_data(raw_data):
-	"""
-	Clean and process user input data using string methods.
-	Args:
-	raw_data: Dictionary with messy user input
-	- 'name': May have extra spaces, wrong capitalization
-	- 'email': May have spaces, uppercase letters
-	- 'phone': May have various formats
-	- 'address': May have inconsistent formatting
-	Returns:
-	dict: Cleaned data with:
-	- 'name': Properly capitalized, trimmed
-	- 'email': Lowercase, no spaces
-	- 'phone': Digits only
-	- 'address': Title case, single spaces
-	- 'username': Generated from name (first_last)
-	- 'validation': Dict of validation results
-	Example:
-	>>> data = {
-	... 'name': ' john DOE ',
-	... 'email': ' JOHN.DOE @EXAMPLE.COM ',
-	... 'phone': '(555) 123-4567',
-	... 'address': '123 main street, apt 5'
-	... }
-	>>> result = process_user_data(data)
-	>>> result['name']
-	'John Doe'
-	>>> result['email']
-	'john.doe@example.com'
-	>>> result['phone']
-	'5551234567'
-	>>> result['username']
-	'john_doe'
-	"""
-	# Your code here
-	pass
+	rawKeys = raw_data.keys()
+	
+	name = "None"
+	if "name" in rawKeys:
+		name = " ".join(raw_data["name"].strip().split()).title()
+	email = "None"
+	if "email" in rawKeys:
+		email = "".join(raw_data["email"].strip().split()).lower()
+	phone = "None"
+	if "phone" in rawKeys:
+		phone = "".join(raw_data["phone"].strip().split()).lower()
+		mat = re.search(r"^[^\d]*(\d{3})[^\d]*(\d{3})[^\d]*(\d{4})[^\d]*$", phone)
+		phone = mat.group(1) + mat.group(2) + mat.group(3)
+	addr = "None"
+	if "address" in rawKeys:
+		addr = " ".join(raw_data["address"].strip().split()).title()
+	
+	username = "_".join(name.split()).lower()
+	return dict({"name": name, "email": email, "phone": phone, "address": addr, "username": username})
 
 def analyze_text(text):
+	totalChar = len(text.replace(" ", ""))
+	totalWords = len(text.split())
+	totalLines = len(text.split("\n"))
+	averageWordLength = sum([len(x) for x in text.split()]) / len(text.split())
+	commonWord = 
+	longestLine = 
+	lineWordCount = [len(x.strip().split()) for x in text.strip().split("\n")]
+	capitalCount = sum([x.isupper() for x in text.strip().split("\n")])
+	questionCount = sum([x.endswith("?") for x in text.strip().split()])
+	exclamationCount = sum([x.endswith("!") for x in text.strip().split()])
 	"""
 	Perform comprehensive text analysis using string methods.
 	Args:
