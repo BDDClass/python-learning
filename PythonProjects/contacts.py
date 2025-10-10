@@ -936,3 +936,24 @@ try:
 except Exception as e:
 	print("An uncaught error has occured:")
 	input(e)
+ 
+'''
+1. Great job!
+2. Grading Rubric:
+   * Testing & Documentation--10 out 10
+   * User Interface -- 15 out of 15
+   * Advanced Operations -- 35 out of 35
+   * Core Contact Management -- 40 out of 40
+
+   Additional Bonus Points:
+        Section 1.3--
+                10 points for search_contacts_by_name
+                10 points for find_contact_by_pone
+        Section 2.2--
+                10 points for export_contacts_by_category
+3. Total: 130 out of 100.
+
+Keep up the good work!
+
+Dr. X. W.
+'''

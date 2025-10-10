@@ -1,0 +1,26 @@
+1. Grading Rubric:
+   * String methods:          
+    * Receipt Formatting     10 out of 10
+    * Data Processing        12 out of 12
+    * Text Analysis          7 out of 13
+   * Regular Expression:     
+    * Pattern Finding        0 out of 10
+    * Format Validation      0 out of 12
+    * Information Extraction 0 out of 13
+   * Combined:                
+    * Cleaning Pipeline      0 out of 10
+    * Smart Replace          0 out of 10
+   * Application:            
+    * Log Analysis           0 out of 10 
+   
+1. Total: 29 out of 100.
+Details:
+Line 5: good checking for the case the arrays do not align
+Line 9: good usage of zip and [:itemCount]
+Line 26: This allows any number of letters preceding the 
+         areacode, the exchange number, and the line number
+Line 30: This assumes that there are only first name and last name
+Line 33: No need to call dict() directly
+Line 43: this checks if the entire line is upper case
+
+
