@@ -1,0 +1,39 @@
+
+Part I Scores: 29
+
+Part 2 Grading Rubrics:
+Problem 1:
+- add_item function:                5 out of 5 points
+- calculate_total function:         5 out of 5 points  
+- apply_discount function:          5 out of 5 points
+
+Problem 2:
+- add_student_to_club:              5 out of 5 points
+- get_students_in_multiple_clubs:   5 out of 5 points
+- find_exclusive_members:           5 out of 5 points
+- merge_clubs:                      10 out of 10 bonus points
+
+Problem 3:
+- create_score_array:               5 out of 5 points
+- find_struggling_students:         5 out of 5 points
+- curve_scores:                     5 out of 5 points
+- get_exam_statistics:              5 out of 5 points
+
+Problem 4:
+- clean_message:                    4 out of 5 points
+- expand_abbreviations:             5 out of 5 points
+- count_words:                      5 out of 5 points
+- censor_numbers:                   5 out of 5 points
+
+Problem 5:
+- validate_password:                10 out of 10 points
+- extract_hashtags:                 10 out of 10 points
+- validate_time:                    5 out of 5 bonus points
+- find_dates:                       5 out of 5 bonus points
+
+Total: 109
+
+Great job, Benjamin, Keep it up!
+
+Details:
+Line 42-43: This will throw an exception if the message has only .?! characters
